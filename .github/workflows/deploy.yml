@@ -5,10 +5,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Correct permissions placement
 permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write  # Required for concurrency control
 
 concurrency:
   group: "pages"
@@ -26,27 +28,31 @@ jobs:
         with:
           version: 8
           run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'pnpm'
+
       - name: Install dependencies
-        run: pnpm install 
+        run: pnpm install
 
       - name: Build the app
         run: npm run build
+
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
-  
+
   deploy:
+    runs-on: ubuntu-22.04
+    needs: build
     environment:
       name: github-pages
-      url: ${{ steps.deploy-to-pages.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-22.04
+      url: ${{steps.deploy-to-pages.outputs.page_url}}
+    
     steps:
       - name: Deploy to GitHub Pages
         id: deploy-to-pages
@@ -54,4 +60,3 @@ jobs:
         with:
           publish_dir: ./dist
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
